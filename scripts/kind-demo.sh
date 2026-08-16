@@ -140,7 +140,7 @@ done
 
 echo
 echo "▶ result:"
-kubectl -n "${NAMESPACE}" get ipspaceclaims -o wide
+kubectl get ipspaceclaims -A -o wide
 
 echo
 echo "Tear down with: kind delete cluster --name ${CLUSTER_NAME}"

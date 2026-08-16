@@ -127,6 +127,7 @@ EOF
 echo "▶ waiting for operator rollout"
 kubectl -n infoblox-system rollout status deployment/infoblox-ipam-operator --timeout=90s
 
+kubectl create namespace network-infra --dry-run=client -o yaml | kubectl apply -f -
 echo "▶ applying sample IPSpaceClaim"
 kubectl apply -f config/samples/ipspaceclaim_sample.yaml
 

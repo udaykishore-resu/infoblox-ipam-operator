@@ -21,7 +21,7 @@ metadata:
   namespace: network-infra
 spec:
   ipSpaceName: prod-eks-us-east-1
-  fixedCIDR: "10.44.12.0/28"
+  fixedCIDR: "10.44.200.0/28"
   reclaimPolicy: Retain
   tags:
     team: network-platform

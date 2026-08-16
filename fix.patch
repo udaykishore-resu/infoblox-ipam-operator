@@ -1,0 +1,87 @@
+diff --git a/cmd/main.go b/cmd/main.go
+index 7cfc4ce..2aeddba 100644
+--- a/cmd/main.go
++++ b/cmd/main.go
+@@ -14,6 +14,7 @@ import (
+ 	ctrl "sigs.k8s.io/controller-runtime"
+ 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+ 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
++	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+ 
+ 	ipamv1alpha1 "github.com/udaykishore-resu/infoblox-ipam-operator/api/v1alpha1"
+ 	"github.com/udaykishore-resu/infoblox-ipam-operator/internal/controller"
+@@ -54,7 +55,7 @@ func main() {
+ 
+ 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+ 		Scheme:                 scheme,
+-		Metrics:                ctrl.MetricsServerOptions{BindAddress: metricsAddr},
++		Metrics:                metricsserver.Options{BindAddress: metricsAddr},
+ 		HealthProbeBindAddress: probeAddr,
+ 		LeaderElection:         enableLeaderElection,
+ 		LeaderElectionID:       "infoblox-ipam-operator-lock",
+diff --git a/cmd/mock-infoblox/main.go b/cmd/mock-infoblox/main.go
+index cadc1a5..bf753e7 100644
+--- a/cmd/mock-infoblox/main.go
++++ b/cmd/mock-infoblox/main.go
+@@ -136,12 +136,45 @@ func (s *server) create(w http.ResponseWriter, r *http.Request) {
+ 			}
+ 		}
+ 	} else {
+-		// next_available: bump-allocate a demo block from the pool's base network.
++		// next_available: scan forward from the pool's current pointer,
++		// skipping any octet already in use by a live block in this space.
++		// This is what actually makes allocation collision-safe — merely
++		// incrementing a counter (the previous behavior) trusts the
++		// counter's memory of what it already handed out, but says nothing
++		// about what's *actually* allocated right now. That distinction
++		// matters here because this is an in-memory demo server: if the
++		// process restarts, the counter resets to its seed value while any
++		// blocks a caller still believes are live were wiped along with it.
++		// Scanning against the current block set means a restarted server
++		// can't silently double-allocate an octet that's still in use —
++		// though note it *can* re-hand-out an octet whose original block
++		// was itself lost in the same restart, since there is no
++		// persistence. That's an inherent limitation of an in-memory demo
++		// fixture, not something this fix claims to solve.
+ 		octets := pool.baseNet.To4()
+-		addr := fmt.Sprintf("%d.%d.%d.0", octets[0], octets[1], pool.nextOctet)
+-		pool.nextOctet++
+-		block.Address = addr
++		candidate := pool.nextOctet
++		found := -1
++		for i := 0; i < 256; i++ {
++			o := (candidate + i) % 256
++			taken := false
++			for _, b := range s.blocks {
++				if b.Space == req.Space && b.Address == fmt.Sprintf("%d.%d.%d.0", octets[0], octets[1], o) {
++					taken = true
++					break
++				}
++			}
++			if !taken {
++				found = o
++				break
++			}
++		}
++		if found == -1 {
++			writeErr(w, http.StatusConflict, fmt.Sprintf("ip space %q exhausted (demo allocator caps at 256 blocks)", req.Space))
++			return
++		}
++		block.Address = fmt.Sprintf("%d.%d.%d.0", octets[0], octets[1], found)
+ 		block.CIDR = req.CIDR
++		pool.nextOctet = found + 1
+ 	}
+ 
+ 	s.blocks[block.ID] = block
+diff --git a/scripts/kind-demo.sh b/scripts/kind-demo.sh
+index 44332ba..dea9b42 100755
+--- a/scripts/kind-demo.sh
++++ b/scripts/kind-demo.sh
+@@ -128,6 +128,7 @@ echo "▶ waiting for operator rollout"
+ kubectl -n infoblox-system rollout status deployment/infoblox-ipam-operator --timeout=90s
+ 
+ echo "▶ applying sample IPSpaceClaim"
++kubectl create namespace network-infra --dry-run=client -o yaml | kubectl apply -f -
+ kubectl apply -f config/samples/ipspaceclaim_sample.yaml
+ 
+ echo "▶ waiting for it to bind..."

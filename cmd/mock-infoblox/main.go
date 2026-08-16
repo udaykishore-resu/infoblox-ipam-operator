@@ -136,12 +136,45 @@ func (s *server) create(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		// next_available: bump-allocate a demo block from the pool's base network.
+		// next_available: scan forward from the pool's current pointer,
+		// skipping any octet already in use by a live block in this space.
+		// This is what actually makes allocation collision-safe — merely
+		// incrementing a counter (the previous behavior) trusts the
+		// counter's memory of what it already handed out, but says nothing
+		// about what's *actually* allocated right now. That distinction
+		// matters here because this is an in-memory demo server: if the
+		// process restarts, the counter resets to its seed value while any
+		// blocks a caller still believes are live were wiped along with it.
+		// Scanning against the current block set means a restarted server
+		// can't silently double-allocate an octet that's still in use —
+		// though note it *can* re-hand-out an octet whose original block
+		// was itself lost in the same restart, since there is no
+		// persistence. That's an inherent limitation of an in-memory demo
+		// fixture, not something this fix claims to solve.
 		octets := pool.baseNet.To4()
-		addr := fmt.Sprintf("%d.%d.%d.0", octets[0], octets[1], pool.nextOctet)
-		pool.nextOctet++
-		block.Address = addr
+		candidate := pool.nextOctet
+		found := -1
+		for i := 0; i < 256; i++ {
+			o := (candidate + i) % 256
+			taken := false
+			for _, b := range s.blocks {
+				if b.Space == req.Space && b.Address == fmt.Sprintf("%d.%d.%d.0", octets[0], octets[1], o) {
+					taken = true
+					break
+				}
+			}
+			if !taken {
+				found = o
+				break
+			}
+		}
+		if found == -1 {
+			writeErr(w, http.StatusConflict, fmt.Sprintf("ip space %q exhausted (demo allocator caps at 256 blocks)", req.Space))
+			return
+		}
+		block.Address = fmt.Sprintf("%d.%d.%d.0", octets[0], octets[1], found)
 		block.CIDR = req.CIDR
+		pool.nextOctet = found + 1
 	}
 
 	s.blocks[block.ID] = block

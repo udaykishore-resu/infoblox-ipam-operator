@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: infoblox-ipam-operator-role
+rules:
+  - apiGroups: ["infoblox.udaykishore.dev"]
+    resources: ["ipspaceclaims"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["infoblox.udaykishore.dev"]
+    resources: ["ipspaceclaims/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["infoblox.udaykishore.dev"]
+    resources: ["ipspaceclaims/finalizers"]
+    verbs: ["update"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]

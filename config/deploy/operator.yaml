@@ -1,0 +1,81 @@
+# config/deploy/operator.yaml
+#
+# Deploys infoblox-ipam-operator to ANY real Kubernetes cluster (EKS, GKE,
+# on-prem — anything with `kubectl` access), using the images CI publishes
+# to GHCR on every push to main. Not for the demo — see scripts/kind-demo.sh
+# for the local, no-real-cluster-needed path.
+#
+# Before applying:
+#   1. Replace GITHUB_OWNER below with your GitHub username/org
+#      (sed -i 's/GITHUB_OWNER/yourname/' config/deploy/operator.yaml)
+#   2. Create the infoblox-credentials Secret with a REAL Infoblox service
+#      account token:
+#        kubectl create secret generic infoblox-credentials \
+#          -n infoblox-system \
+#          --from-literal=INFOBLOX_API_TOKEN=<your-real-token>
+#   3. Point --infoblox-base-url at the real Infoblox Portal
+#      (default here already is https://csp.infoblox.com — change only if
+#      you're on a different regional endpoint)
+#
+# Then: kubectl apply -f config/crd/ipspaceclaims.yaml
+#       kubectl apply -f config/rbac/role.yaml
+#       kubectl apply -f config/deploy/operator.yaml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: infoblox-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: infoblox-ipam-operator
+  namespace: infoblox-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: infoblox-ipam-operator-binding
+subjects:
+  - kind: ServiceAccount
+    name: infoblox-ipam-operator
+    namespace: infoblox-system
+roleRef:
+  kind: ClusterRole
+  name: infoblox-ipam-operator-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infoblox-ipam-operator
+  namespace: infoblox-system
+spec:
+  replicas: 2 # >1 is safe: leader election (on by default) ensures only one reconciles
+  selector:
+    matchLabels: {app: infoblox-ipam-operator}
+  template:
+    metadata:
+      labels: {app: infoblox-ipam-operator}
+    spec:
+      serviceAccountName: infoblox-ipam-operator
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: operator
+          image: ghcr.io/GITHUB_OWNER/infoblox-ipam-operator:latest
+          imagePullPolicy: Always
+          args:
+            - --infoblox-base-url=https://csp.infoblox.com
+            - --leader-elect=true
+          envFrom:
+            - secretRef: {name: infoblox-credentials}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          livenessProbe:
+            httpGet: {path: /healthz, port: 8081}
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet: {path: /readyz, port: 8081}
+            initialDelaySeconds: 5

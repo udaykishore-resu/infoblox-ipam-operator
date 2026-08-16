@@ -1,0 +1,82 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: ipspaceclaims.infoblox.udaykishore.dev
+spec:
+  group: infoblox.udaykishore.dev
+  names:
+    kind: IPSpaceClaim
+    listKind: IPSpaceClaimList
+    plural: ipspaceclaims
+    singular: ipspaceclaim
+    shortNames: ["isc"]
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: IPSpace
+          type: string
+          jsonPath: .spec.ipSpaceName
+        - name: CIDR
+          type: string
+          jsonPath: .status.allocatedCIDR
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required: ["ipSpaceName"]
+              properties:
+                ipSpaceName:
+                  type: string
+                  description: Name of the Infoblox IP Space to allocate from.
+                cidrSize:
+                  type: integer
+                  description: Requested prefix length, e.g. 28 for a /28.
+                fixedCIDR:
+                  type: string
+                  description: Request a specific known CIDR instead of next-available.
+                tags:
+                  type: object
+                  additionalProperties:
+                    type: string
+                reclaimPolicy:
+                  type: string
+                  enum: ["Release", "Retain"]
+                  default: "Release"
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                allocatedCIDR:
+                  type: string
+                infobloxRef:
+                  type: string
+                lastReconciledGeneration:
+                  type: integer
+                lastDriftCheckTime:
+                  type: string
+                  format: date-time
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type: {type: string}
+                      status: {type: string}
+                      reason: {type: string}
+                      message: {type: string}
+                      lastTransitionTime: {type: string, format: date-time}
+                      observedGeneration: {type: integer}

@@ -1,0 +1,28 @@
+apiVersion: infoblox.udaykishore.dev/v1alpha1
+kind: IPSpaceClaim
+metadata:
+  name: checkout-service-block
+  namespace: payments
+spec:
+  ipSpaceName: prod-eks-us-east-1
+  cidrSize: 28
+  reclaimPolicy: Release
+  tags:
+    team: payments-platform
+    cost-center: "CC-4471"
+    cluster: eks-prod-use1
+---
+# Example: pin a pre-existing, already-known CIDR under operator management
+# (e.g. migrating a legacy static allocation without changing the address).
+apiVersion: infoblox.udaykishore.dev/v1alpha1
+kind: IPSpaceClaim
+metadata:
+  name: legacy-nat-gateway-block
+  namespace: network-infra
+spec:
+  ipSpaceName: prod-eks-us-east-1
+  fixedCIDR: "10.44.12.0/28"
+  reclaimPolicy: Retain
+  tags:
+    team: network-platform
+    migrated-from: terraform

@@ -1,0 +1,77 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: true
+
+      - name: gofmt check
+        run: |
+          diff -u <(echo -n) <(gofmt -l .)
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test ./... -race -count=1
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build operator image
+        run: docker build -t infoblox-ipam-operator:ci --target operator .
+      - name: Build mock-infoblox image
+        run: docker build -t mock-infoblox:ci --target mock-infoblox .
+
+  # Publishes both images to GitHub Container Registry on every push to
+  # main, using the repo's built-in GITHUB_TOKEN — no extra secrets to
+  # configure. This is what makes the repo deployable immediately after
+  # push: any cluster can then `docker pull ghcr.io/<owner>/<repo>-operator`.
+  publish:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push operator image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: operator
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/infoblox-ipam-operator:latest
+            ghcr.io/${{ github.repository_owner }}/infoblox-ipam-operator:${{ github.sha }}
+
+      - name: Build and push mock-infoblox image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: mock-infoblox
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/mock-infoblox:latest
+            ghcr.io/${{ github.repository_owner }}/mock-infoblox:${{ github.sha }}

@@ -1,0 +1,160 @@
+<svg viewBox="0 0 1280 860" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#374151"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0b6bcb"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="860" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="640" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#111827">infoblox-ipam-operator — AWS Architecture</text>
+  <text x="640" y="56" text-anchor="middle" font-size="13" fill="#6b7280">How the operator's customer-side EKS cluster integrates with Infoblox's own AWS-hosted control plane</text>
+
+  <!-- ===================== LEFT PANEL: Infoblox-operated AWS ===================== -->
+  <rect x="30" y="90" width="560" height="700" rx="14" fill="#FFF7ED" stroke="#F97316" stroke-width="1.5"/>
+  <text x="310" y="120" text-anchor="middle" font-size="15" font-weight="700" fill="#9A3412">Infoblox Universal DDI — AWS-Hosted Control Plane</text>
+  <text x="310" y="138" text-anchor="middle" font-size="11" fill="#9A3412">(Infoblox-operated AWS account/region — not yours)</text>
+
+  <!-- Shared Services VPC -->
+  <rect x="60" y="160" width="500" height="270" rx="10" fill="#FFEDD5" stroke="#FB923C"/>
+  <text x="80" y="182" font-size="12.5" font-weight="700" fill="#7C2D12">Shared Services VPC</text>
+
+  <!-- Atlas / EKS -->
+  <rect x="80" y="196" width="230" height="130" rx="8" fill="#ffffff" stroke="#FDBA74"/>
+  <text x="195" y="216" text-anchor="middle" font-size="12" font-weight="700" fill="#7C2D12">Atlas Platform (EKS)</text>
+  <text x="195" y="232" text-anchor="middle" font-size="10" fill="#7C2D12">Management-plane services,</text>
+  <text x="195" y="245" text-anchor="middle" font-size="10" fill="#7C2D12">containerized on Kubernetes</text>
+  <!-- little pod icons -->
+  <g fill="#F97316">
+    <rect x="105" y="260" width="26" height="18" rx="3"/>
+    <rect x="140" y="260" width="26" height="18" rx="3"/>
+    <rect x="175" y="260" width="26" height="18" rx="3"/>
+    <rect x="210" y="260" width="26" height="18" rx="3"/>
+    <rect x="123" y="285" width="26" height="18" rx="3"/>
+    <rect x="158" y="285" width="26" height="18" rx="3"/>
+    <rect x="193" y="285" width="26" height="18" rx="3"/>
+  </g>
+  <text x="195" y="315" text-anchor="middle" font-size="9.5" fill="#7C2D12">DNS · DHCP · IPAM services</text>
+
+  <!-- NIOS-X as a Service -->
+  <rect x="330" y="196" width="210" height="90" rx="8" fill="#ffffff" stroke="#FDBA74"/>
+  <text x="435" y="218" text-anchor="middle" font-size="12" font-weight="700" fill="#7C2D12">NIOS-X as a Service</text>
+  <text x="435" y="236" text-anchor="middle" font-size="10" fill="#7C2D12">Cloud-delivered DNS/DHCP</text>
+  <text x="435" y="250" text-anchor="middle" font-size="10" fill="#7C2D12">edge appliances</text>
+  <text x="435" y="268" text-anchor="middle" font-size="9.5" fill="#9A3412">↕ AWS Transit Gateway</text>
+
+  <!-- Transit gateway box -->
+  <rect x="330" y="296" width="210" height="54" rx="8" fill="#FFEDD5" stroke="#FB923C" stroke-dasharray="4 3"/>
+  <text x="435" y="318" text-anchor="middle" font-size="11" font-weight="700" fill="#7C2D12">AWS Transit Gateway</text>
+  <text x="435" y="333" text-anchor="middle" font-size="9.5" fill="#7C2D12">Centralized cross-VPC routing</text>
+
+  <!-- Multi-cloud DNS row -->
+  <text x="80" y="450" font-size="12.5" font-weight="700" fill="#7C2D12">Multi-cloud DNS management (Universal DDI Management)</text>
+  <rect x="80" y="462" width="145" height="50" rx="8" fill="#ffffff" stroke="#FDBA74"/>
+  <text x="152" y="482" text-anchor="middle" font-size="11" font-weight="600" fill="#7C2D12">Amazon Route 53</text>
+  <text x="152" y="498" text-anchor="middle" font-size="9" fill="#9A3412">this account</text>
+
+  <rect x="240" y="462" width="145" height="50" rx="8" fill="#ffffff" stroke="#FDBA74"/>
+  <text x="312" y="482" text-anchor="middle" font-size="11" font-weight="600" fill="#7C2D12">Azure DNS</text>
+  <text x="312" y="498" text-anchor="middle" font-size="9" fill="#9A3412">customer's Azure</text>
+
+  <rect x="400" y="462" width="160" height="50" rx="8" fill="#ffffff" stroke="#FDBA74"/>
+  <text x="480" y="482" text-anchor="middle" font-size="11" font-weight="600" fill="#7C2D12">Google Cloud DNS</text>
+  <text x="480" y="498" text-anchor="middle" font-size="9" fill="#9A3412">customer's GCP</text>
+
+  <!-- Universal DDI Portal API -->
+  <rect x="60" y="540" width="500" height="90" rx="10" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="310" y="566" text-anchor="middle" font-size="13" font-weight="700" fill="#78350F">Universal DDI Portal REST API</text>
+  <text x="310" y="584" text-anchor="middle" font-size="11.5" font-family="monospace" fill="#78350F">csp.infoblox.com/api/ddi/v1/ipam/...</text>
+  <text x="310" y="602" text-anchor="middle" font-size="10" fill="#92400E">Public HTTPS endpoint — token-authenticated service accounts</text>
+
+  <!-- Marketplace / billing note -->
+  <rect x="60" y="650" width="500" height="70" rx="10" fill="#ffffff" stroke="#FDBA74" stroke-dasharray="3 3"/>
+  <text x="310" y="674" text-anchor="middle" font-size="11" font-weight="600" fill="#7C2D12">Distribution: AWS Marketplace</text>
+  <text x="310" y="692" text-anchor="middle" font-size="9.5" fill="#7C2D12">Subscription billed via customer's AWS account;</text>
+  <text x="310" y="705" text-anchor="middle" font-size="9.5" fill="#7C2D12">AWS handles deployment/infra management for the listing</text>
+
+  <text x="310" y="765" text-anchor="middle" font-size="9.5" fill="#9CA3AF" font-style="italic">Based on Infoblox's public documentation and AWS Marketplace listing.</text>
+  <text x="310" y="780" text-anchor="middle" font-size="9.5" fill="#9CA3AF" font-style="italic">Not an official Infoblox diagram — reconstructed for architectural context.</text>
+
+  <!-- ===================== RIGHT PANEL: Customer AWS / EKS ===================== -->
+  <rect x="690" y="90" width="560" height="700" rx="14" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="970" y="120" text-anchor="middle" font-size="15" font-weight="700" fill="#1E3A8A">Your AWS Account — EKS Cluster</text>
+  <text x="970" y="138" text-anchor="middle" font-size="11" fill="#1E3A8A">Where infoblox-ipam-operator actually runs</text>
+
+  <!-- infoblox-system namespace -->
+  <rect x="720" y="160" width="500" height="220" rx="10" fill="#DBEAFE" stroke="#60A5FA"/>
+  <text x="740" y="182" font-size="12.5" font-weight="700" fill="#1E3A8A">namespace: infoblox-system</text>
+
+  <rect x="740" y="196" width="220" height="90" rx="8" fill="#ffffff" stroke="#93C5FD"/>
+  <text x="850" y="218" text-anchor="middle" font-size="12" font-weight="700" fill="#1E3A8A">infoblox-ipam-operator</text>
+  <text x="850" y="236" text-anchor="middle" font-size="10" fill="#1E3A8A">Deployment, 2 replicas</text>
+  <text x="850" y="250" text-anchor="middle" font-size="10" fill="#1E3A8A">leader-elected, distroless image</text>
+  <text x="850" y="268" text-anchor="middle" font-size="9" fill="#3B82F6">/healthz · /readyz · :8080 metrics</text>
+
+  <rect x="980" y="196" width="220" height="90" rx="8" fill="#ffffff" stroke="#93C5FD"/>
+  <text x="1090" y="218" text-anchor="middle" font-size="12" font-weight="700" fill="#1E3A8A">infoblox-credentials</text>
+  <text x="1090" y="236" text-anchor="middle" font-size="10" fill="#1E3A8A">Kubernetes Secret</text>
+  <text x="1090" y="250" text-anchor="middle" font-size="10" fill="#1E3A8A">INFOBLOX_API_TOKEN</text>
+  <text x="1090" y="268" text-anchor="middle" font-size="9" fill="#3B82F6">mounted via envFrom, never a flag</text>
+
+  <rect x="740" y="300" width="460" height="66" rx="8" fill="#DBEAFE" stroke="#60A5FA" stroke-dasharray="4 3"/>
+  <text x="970" y="322" text-anchor="middle" font-size="11" font-weight="700" fill="#1E3A8A">ClusterRole / ServiceAccount</text>
+  <text x="970" y="340" text-anchor="middle" font-size="9.5" fill="#1E3A8A">RBAC scoped to ipspaceclaims, ipspaceclaims/status, leases</text>
+  <text x="970" y="354" text-anchor="middle" font-size="9.5" fill="#1E3A8A">(least-privilege — no cluster-admin)</text>
+
+  <!-- Application namespaces -->
+  <text x="740" y="412" font-size="12.5" font-weight="700" fill="#1E3A8A">Application namespaces (IPSpaceClaim CRDs)</text>
+
+  <rect x="740" y="424" width="230" height="80" rx="8" fill="#ffffff" stroke="#93C5FD"/>
+  <text x="855" y="444" text-anchor="middle" font-size="11" font-weight="700" fill="#1E3A8A">ns: payments</text>
+  <text x="855" y="462" text-anchor="middle" font-size="10" fill="#1E3A8A">IPSpaceClaim</text>
+  <text x="855" y="476" text-anchor="middle" font-size="9.5" font-family="monospace" fill="#3B82F6">checkout-service-block</text>
+  <text x="855" y="492" text-anchor="middle" font-size="9" fill="#6B7280">cidrSize: 28 (next-available)</text>
+
+  <rect x="990" y="424" width="230" height="80" rx="8" fill="#ffffff" stroke="#93C5FD"/>
+  <text x="1105" y="444" text-anchor="middle" font-size="11" font-weight="700" fill="#1E3A8A">ns: network-infra</text>
+  <text x="1105" y="462" text-anchor="middle" font-size="10" fill="#1E3A8A">IPSpaceClaim</text>
+  <text x="1105" y="476" text-anchor="middle" font-size="9.5" font-family="monospace" fill="#3B82F6">legacy-nat-gateway-block</text>
+  <text x="1105" y="492" text-anchor="middle" font-size="9" fill="#6B7280">fixedCIDR (pinned, retained)</text>
+
+  <!-- Reconcile loop -->
+  <rect x="740" y="524" width="480" height="86" rx="8" fill="#EFF6FF" stroke="#3B82F6" stroke-dasharray="3 3"/>
+  <text x="980" y="546" text-anchor="middle" font-size="11" font-weight="700" fill="#1E3A8A">Reconcile loop (controller-runtime)</text>
+  <text x="980" y="564" text-anchor="middle" font-size="9.5" fill="#1E3A8A">watch → allocate/get/release → write .status</text>
+  <text x="980" y="580" text-anchor="middle" font-size="9.5" fill="#1E3A8A">drift-check every 5 min · finalizer-gated delete</text>
+  <text x="980" y="596" text-anchor="middle" font-size="9.5" fill="#1E3A8A">idempotent release, bounded backoff on failure</text>
+
+  <!-- EKS control plane note -->
+  <rect x="740" y="626" width="480" height="60" rx="8" fill="#ffffff" stroke="#93C5FD" stroke-dasharray="3 3"/>
+  <text x="980" y="650" text-anchor="middle" font-size="10.5" fill="#1E3A8A">EKS control plane (managed by AWS) — hosts the API server</text>
+  <text x="980" y="666" text-anchor="middle" font-size="10.5" fill="#1E3A8A">this operator watches via client-go informers</text>
+
+  <text x="970" y="765" text-anchor="middle" font-size="9.5" fill="#9CA3AF" font-style="italic">This half is exactly what config/deploy/operator.yaml deploys.</text>
+
+  <!-- ===================== CONNECTOR ===================== -->
+  <polyline points="560,585 594,585 594,240 720,240" fill="none" stroke="#0b6bcb" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
+  <rect x="598" y="330" width="88" height="132" rx="6" fill="#ffffff" stroke="#0b6bcb"/>
+  <text x="642" y="350" text-anchor="middle" font-size="10" font-weight="700" fill="#0b6bcb">HTTPS</text>
+  <text x="642" y="364" text-anchor="middle" font-size="8" fill="#0b6bcb">(public</text>
+  <text x="642" y="375" text-anchor="middle" font-size="8" fill="#0b6bcb">internet)</text>
+  <text x="642" y="394" text-anchor="middle" font-size="8.5" fill="#0b6bcb">REST calls:</text>
+  <text x="642" y="410" text-anchor="middle" font-size="8" fill="#0b6bcb">allocate</text>
+  <text x="642" y="423" text-anchor="middle" font-size="8" fill="#0b6bcb">get</text>
+  <text x="642" y="436" text-anchor="middle" font-size="8" fill="#0b6bcb">release</text>
+  <text x="642" y="452" text-anchor="middle" font-size="7.5" fill="#0b6bcb">(DDI v1)</text>
+
+  <!-- boundary dashed vertical line between the two AWS accounts -->
+  <line x1="618" y1="90" x2="618" y2="790" stroke="#9CA3AF" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="640" y="820" text-anchor="middle" font-size="11" fill="#6B7280">Account boundary — two separate AWS accounts, connected only over the public Universal DDI API</text>
+
+  <!-- Legend -->
+  <rect x="30" y="800" width="14" height="14" fill="#FFEDD5" stroke="#FB923C"/>
+  <text x="50" y="811" font-size="10" fill="#374151">Infoblox-operated infrastructure</text>
+  <rect x="260" y="800" width="14" height="14" fill="#DBEAFE" stroke="#60A5FA"/>
+  <text x="280" y="811" font-size="10" fill="#374151">Your AWS account / EKS cluster</text>
+</svg>

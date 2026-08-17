@@ -132,7 +132,34 @@ NAME                       IPSPACE               CIDR              PHASE
 checkout-service-block     prod-eks-us-east-1     10.44.12.0/28     Bound
 ```
 
-## 4. Design choices, and why
+## 4. AWS architecture
+
+![AWS architecture: Infoblox's AWS-hosted control plane alongside a customer EKS cluster running infoblox-ipam-operator](docs/architecture-aws.svg)
+
+*[Download as PNG](docs/architecture-aws.png) · [source SVG](docs/architecture-aws.svg)*
+
+This shows both halves of the picture: Infoblox's own AWS-hosted control
+plane (left, reconstructed from Infoblox's public documentation and AWS
+Marketplace listing — not an official Infoblox diagram) and the customer-side
+EKS cluster where this operator actually runs (right, exactly what
+`config/deploy/operator.yaml` deploys). The two are separate AWS accounts,
+connected only over Infoblox's public Universal DDI REST API.
+
+**On the Infoblox side:** the Atlas platform runs as containers on Kubernetes
+(EKS), fronting NIOS-X as a Service and routed through AWS Transit Gateway
+across a Shared Services VPC. Universal DDI Management extends the same
+control plane to Route 53, Azure DNS, and Google Cloud DNS, and the whole
+suite is distributed and billed through AWS Marketplace.
+
+**On the operator side:** `infoblox-ipam-operator` runs as a leader-elected
+Deployment in `infoblox-system`, watching `IPSpaceClaim` CRDs across
+application namespaces (`payments`, `network-infra`, ...) via the EKS control
+plane's API server, and calling out to Infoblox's DDI v1 REST API over HTTPS
+to allocate, poll, and release address blocks — the exact request/response
+shapes `internal/infoblox/client.go` implements and `cmd/mock-infoblox`
+simulates for the demo.
+
+## 5. Design choices, and why
 
 - **Level-triggered reconciliation, not event-triggered scripting.** A
   webhook that only reacts to Kubernetes-side events (like the existing
@@ -159,9 +186,9 @@ checkout-service-block     prod-eks-us-east-1     10.44.12.0/28     Bound
   implements the actual DDI v1 request/response shapes in-memory, so the
   entire system — including the controller's reconcile loop — can be
   exercised end-to-end in CI or on a laptop with no network access and no
-  Infoblox account. See [section 6](#6-running-the-demo) below.
+  Infoblox account. See [section 8](#8-running-the-demo) below.
 
-## 5. What's intentionally out of scope (v1)
+## 6. What's intentionally out of scope (v1)
 
 - **CNI-chain integration** — a Whereabouts-style plugin so pods themselves
   pull addresses through this path at pod-creation time. This changes the
@@ -178,7 +205,34 @@ checkout-service-block     prod-eks-us-east-1     10.44.12.0/28     Bound
   rejecting a claim that mixes `cidrSize` and `fixedCIDR`) — currently
   enforced in the controller at reconcile time, not at admission time.
 
-## 6. Running the demo
+## 7. Future improvements
+
+Everything in [§6](#6-whats-intentionally-out-of-scope-v1) is a real next
+feature, not a someday-maybe list. Rough priority order, with what each one
+actually requires:
+
+| Feature | Why it's next | What it touches |
+|---|---|---|
+| **CNI-chain plugin** (Whereabouts-style) | The highest-leverage gap — lets pods pull addresses directly at creation time instead of only claim-level pre-allocation | New trust boundary (kubelet-level access), likely a separate binary/DaemonSet from the claim controller |
+| **Admission webhooks** | Cheapest to build, catches invalid specs (e.g. both `cidrSize` and `fixedCIDR` set) before they ever reach a reconcile loop instead of failing at allocation time | `ValidatingWebhookConfiguration` + a small webhook server, standard controller-runtime pattern |
+| **Prometheus metrics** | Needed before this runs anywhere real — allocation latency, drift-check failure rate, Infoblox API error rate | controller-runtime's metrics endpoint already exists; this is custom metric registration on top of it |
+| **Retry/backoff with jitter** | Current 30-second flat requeue on failure is fine for a demo, not for a fleet hitting real Infoblox rate limits | `internal/controller` reconcile error paths |
+| **Multi-cluster / hub-spoke coordination** | Lowest priority — only matters at an org running multiple Infoblox Grids or Universal DDI accounts | Likely a second CRD (`IPSpaceClaimBinding`?) or a controller-per-Grid model — genuinely needs a design pass, not just code |
+
+**How these will actually get built:** the CNI-chain plugin especially is
+exactly the kind of feature that benefits from writing the spec before the
+code — it changes a trust boundary, which is precisely where an AI coding
+agent (or a human, for that matter) is most likely to generate something
+that compiles cleanly but gets the security model wrong. Rather than
+prompting an agent straight to implementation, that feature will go through
+[GitHub Spec Kit](https://github.com/github/spec-kit)'s structured flow —
+`/specify` → `/plan` → `/tasks` → `/implement` — so the trust-boundary and
+failure-mode decisions get written down and reviewed *before* any code
+exists, not reverse-engineered from a diff afterward. The resulting
+`spec.md`/`plan.md` will be committed alongside the feature itself, so the
+design reasoning is visible in the repo, not just the result.
+
+## 8. Running the demo
 
 Two levels, depending on how much you want to stand up.
 
@@ -231,7 +285,7 @@ Kubernetes cluster required. `internal/controller` tests (using
 `sigs.k8s.io` modules resolved via `go mod tidy` in an environment with
 normal internet egress.
 
-## 7. Production readiness checklist
+## 9. Production readiness checklist
 
 What's already here, and what a real rollout would add on top:
 
@@ -260,7 +314,7 @@ What's already here, and what a real rollout would add on top:
 - Helm chart / Kustomize overlays for install, instead of the raw
   `kubectl apply` shown in `scripts/kind-demo.sh`
 
-## 8. Status
+## 10. Status
 
 Portfolio / demonstration project, built to address a specific, verifiable
 gap in Infoblox's Kubernetes tooling ecosystem — every claim above about

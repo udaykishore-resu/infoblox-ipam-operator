@@ -43,9 +43,6 @@ spreadsheet or wiki page — with no automated reconciliation, and no signal
 when someone changes or deletes an allocation directly in the Infoblox
 portal.
 
-![Existing flow](docs/architecture-aws-existing-only.svg)
-*[Download as PNG](docs/architecture-aws-existing-only.png) . [source SVG](docs/architecture-aws-existing-only.svg)*
-
 ## 2. The gap
 
 Specifically, there is **no CRD-based, `controller-runtime`-native IPAM
@@ -66,51 +63,75 @@ Universal DDI as the system of record. Concretely, that means:
   Kubernetes objects that actually consume the address, and no guard
   against leaking allocations if something is deleted out of order.
 
-## 3. The solution: `IPSpaceClaim`
+## 3. The solution: `IPSpaceClaim` and `DNSRecordClaim`
 
-This operator introduces one CRD, `IPSpaceClaim`, and a controller that
-keeps it in sync with Infoblox Universal DDI on an ongoing basis — not just
-at creation time.
+This operator introduces two CRDs — `IPSpaceClaim` for address blocks and
+`DNSRecordClaim` for DNS records — each with its own controller, both kept
+in sync with Infoblox Universal DDI on an ongoing basis, not just at
+creation time. `DNSRecordClaim` is a thin, declarative front door onto
+Infoblox's existing multi-cloud DNS fan-out (see [§4](#4-aws-architecture))
+— the operator talks only to Infoblox's DDI v1 API; Infoblox's own control
+plane is what actually propagates a record to Route 53, Azure DNS, or
+Google Cloud DNS depending on which provider the zone is delegated to.
 
-![Solution flow: kubectl apply triggers the IPSpaceClaim controller, which calls Infoblox Universal DDI over REST](docs/solution-flow.svg)
+```
++-----------------------+        watch           +----------------------------+
+|  kubectl apply -f     | ----------------------> |  Controller manager       |
+|  IPSpaceClaim or      |                         |  (controller-runtime)     |
+|  DNSRecordClaim (CRD) |                         +--------------+-------------+
++-----------------------+                                        |
+                              allocate/get/release (IPAM)          | REST (DDI v1)
+                              create/get/delete record (DNS)       v
+                                                    +----------------------------+
+                                                    |  Infoblox Universal DDI   |
+                                                    |  /api/ddi/v1/ipam/...     |
+                                                    |  /api/ddi/v1/dns/record   |
+                                                    +----------------------------+
+```
+
+![Solution flow: both CRDs watched by one controller manager, which calls Infoblox Universal DDI over REST for either IPAM or DNS](docs/solution-flow.svg)
 
 *[Download as PNG](docs/solution-flow.png) · [source SVG](docs/solution-flow.svg)*
 
-The diagram above is the steady-state shape. The full lifecycle — allocation,
+The diagram above is the steady-state shape. The full lifecycle — creation,
 periodic drift detection, and finalizer-gated deletion — is more than one
-arrow, so here's the sequence end to end:
+arrow, so here's the sequence end to end. Both CRDs share this exact shape;
+only the DDI v1 endpoint and payload differ, called out inline:
 
-![Sequence diagram: IPSpaceClaim allocation, periodic drift detection every 5 minutes, and deletion with release](docs/sequence-diagram.svg)
+![Sequence diagram: claim creation, periodic drift detection every 5 minutes, and deletion with release, for either CRD](docs/sequence-diagram.svg)
 
 *[Download as PNG](docs/sequence-diagram.png) · [source SVG](docs/sequence-diagram.svg)*
 
-**Lifecycle:**
+**Lifecycle (identical shape for both CRDs):**
 
-1. A team declares an `IPSpaceClaim` — either "give me the next available
-   `/28` from this IP space" (`cidrSize: 28`) or "pin this specific CIDR I
-   already own" (`fixedCIDR: 10.44.12.0/28`, for migrating a pre-existing
-   static allocation under operator management).
-2. The controller calls Infoblox's DDI v1 API to allocate it, tagging the
-   allocation with extensible attributes — owning namespace, claim name,
-   team, cost center — so it's traceable from the Infoblox portal back to
-   the exact Kubernetes object that requested it.
-3. The allocated CIDR and the Infoblox resource ref are written back to
-   `.status`. `kubectl get ipspaceclaims` shows the real, live CIDR — not
-   just intent.
+1. A team declares a claim. For `IPSpaceClaim`, either "give me the next
+   available `/28` from this IP space" (`cidrSize: 28`) or "pin this
+   specific CIDR I already own" (`fixedCIDR: 10.44.12.0/28`, for migrating a
+   pre-existing static allocation). For `DNSRecordClaim`, the zone, name,
+   type (`A`/`CNAME`/`TXT`), and value.
+2. The corresponding controller calls Infoblox's DDI v1 API to create it,
+   tagging the resource with extensible attributes — owning namespace,
+   claim name, team, cost center — so it's traceable from the Infoblox
+   portal back to the exact Kubernetes object that requested it.
+3. The result (allocated CIDR, or the record's FQDN) and the Infoblox
+   resource ref are written back to `.status`. `kubectl get ipspaceclaims`
+   or `kubectl get dnsrecordclaims` shows the real, live state — not just
+   intent.
 4. On a bounded interval (default 5 minutes, see `driftRecheckEvery` in
-   `internal/controller`), the controller re-fetches the allocation from
+   `internal/controller`), the controller re-fetches the resource from
    Infoblox and compares it to what's in `.status`. If someone changed or
    deleted it out-of-band, the claim transitions to `Phase: Drifted` with a
    `DriftDetected` condition — visible to `kubectl` and alertable by any
    standard condition-watching tooling.
-5. On CRD deletion, a **finalizer** guarantees the Infoblox-side allocation
-   is released (or retained, per `reclaimPolicy: Release | Retain` —
+5. On CRD deletion, a **finalizer** guarantees the Infoblox-side resource is
+   released (or retained, per `reclaimPolicy: Release | Retain` —
    deliberately mirroring the `PersistentVolume` reclaim-policy pattern K8s
    users already know) before Kubernetes is allowed to finish deleting the
-   object. This closes the "leaked allocation" failure mode pure Terraform
-   workflows are exposed to.
+   object. This closes the "leaked resource" failure mode pure Terraform
+   workflows are exposed to — for a DNS record as much as for an IP block,
+   just with a smaller blast radius.
 
-### Example
+### Examples
 
 ```yaml
 apiVersion: infoblox.udaykishore.dev/v1alpha1
@@ -127,10 +148,31 @@ spec:
     cost-center: "CC-4471"
 ```
 
+```yaml
+apiVersion: infoblox.udaykishore.dev/v1alpha1
+kind: DNSRecordClaim
+metadata:
+  name: checkout-service-record
+  namespace: payments
+spec:
+  zone: example.com
+  name: checkout
+  recordType: A
+  value: "10.44.12.5"
+  ttl: 300
+  reclaimPolicy: Release
+  tags:
+    team: payments-platform
+```
+
 ```
 $ kubectl get ipspaceclaims -n payments
 NAME                       IPSPACE               CIDR              PHASE
 checkout-service-block     prod-eks-us-east-1     10.44.12.0/28     Bound
+
+$ kubectl get dnsrecordclaims -n payments
+NAME                       ZONE          FQDN                     TYPE   PHASE
+checkout-service-record    example.com   checkout.example.com     A      Bound
 ```
 
 ## 4. AWS architecture

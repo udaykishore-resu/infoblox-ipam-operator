@@ -1,0 +1,32 @@
+apiVersion: infoblox.udaykishore.dev/v1alpha1
+kind: DNSRecordClaim
+metadata:
+  name: checkout-service-record
+  namespace: payments
+spec:
+  zone: example.com
+  name: checkout
+  recordType: A
+  value: "10.44.12.5"
+  ttl: 300
+  reclaimPolicy: Release
+  tags:
+    team: payments-platform
+    cost-center: "CC-4471"
+---
+# Example: CNAME pointing at a shared load balancer, in a different zone,
+# demonstrating this CRD is not tied to any single zone or record type.
+apiVersion: infoblox.udaykishore.dev/v1alpha1
+kind: DNSRecordClaim
+metadata:
+  name: internal-api-alias
+  namespace: payments
+spec:
+  zone: internal.corp.demo
+  name: api
+  recordType: CNAME
+  value: shared-lb.internal.corp.demo
+  ttl: 120
+  reclaimPolicy: Release
+  tags:
+    team: payments-platform

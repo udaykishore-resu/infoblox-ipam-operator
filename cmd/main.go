@@ -8,9 +8,6 @@ import (
 	"flag"
 	"os"
 
-	ipamv1alpha1 "github.com/udaykishore-resu/infoblox-ipam-operator/api/v1alpha1"
-	"github.com/udaykishore-resu/infoblox-ipam-operator/internal/controller"
-	"github.com/udaykishore-resu/infoblox-ipam-operator/internal/infoblox"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -18,6 +15,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	ipamv1alpha1 "github.com/udaykishore-resu/infoblox-ipam-operator/api/v1alpha1"
+	"github.com/udaykishore-resu/infoblox-ipam-operator/internal/controller"
+	"github.com/udaykishore-resu/infoblox-ipam-operator/internal/infoblox"
 )
 
 var scheme = runtime.NewScheme()
@@ -71,6 +72,14 @@ func main() {
 		InfobloxClient: infobloxClient,
 	}).SetupWithManager(mgr); err != nil {
 		logger.Error(err, "unable to create controller", "controller", "IPSpaceClaim")
+		os.Exit(1)
+	}
+
+	if err := (&controller.DNSRecordClaimReconciler{
+		Client:         mgr.GetClient(),
+		InfobloxClient: infobloxClient,
+	}).SetupWithManager(mgr); err != nil {
+		logger.Error(err, "unable to create controller", "controller", "DNSRecordClaim")
 		os.Exit(1)
 	}
 

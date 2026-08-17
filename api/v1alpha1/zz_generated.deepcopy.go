@@ -134,3 +134,111 @@ func (in *IPSpaceClaimList) DeepCopyObject() runtime.Object {
 	}
 	return nil
 }
+
+// ---------------------------------------------------------------------
+// DNSRecordClaim deepcopy — same hand-written stand-in for controller-gen
+// as above, extended for the DNS CRD.
+// ---------------------------------------------------------------------
+
+// DeepCopyInto copies all fields of DNSRecordClaimSpec into out.
+func (in *DNSRecordClaimSpec) DeepCopyInto(out *DNSRecordClaimSpec) {
+	*out = *in
+	if in.Tags != nil {
+		out.Tags = make(map[string]string, len(in.Tags))
+		for k, v := range in.Tags {
+			out.Tags[k] = v
+		}
+	}
+}
+
+// DeepCopy returns a deep copy of DNSRecordClaimSpec.
+func (in *DNSRecordClaimSpec) DeepCopy() *DNSRecordClaimSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(DNSRecordClaimSpec)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto copies all fields of DNSRecordClaimStatus into out.
+func (in *DNSRecordClaimStatus) DeepCopyInto(out *DNSRecordClaimStatus) {
+	*out = *in
+	if in.LastDriftCheckTime != nil {
+		out.LastDriftCheckTime = in.LastDriftCheckTime.DeepCopy()
+	}
+	if in.Conditions != nil {
+		out.Conditions = make([]metav1.Condition, len(in.Conditions))
+		for i := range in.Conditions {
+			in.Conditions[i].DeepCopyInto(&out.Conditions[i])
+		}
+	}
+}
+
+// DeepCopy returns a deep copy of DNSRecordClaimStatus.
+func (in *DNSRecordClaimStatus) DeepCopy() *DNSRecordClaimStatus {
+	if in == nil {
+		return nil
+	}
+	out := new(DNSRecordClaimStatus)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto copies all fields of DNSRecordClaim into out.
+func (in *DNSRecordClaim) DeepCopyInto(out *DNSRecordClaim) {
+	*out = *in
+	out.TypeMeta = in.TypeMeta
+	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	in.Spec.DeepCopyInto(&out.Spec)
+	in.Status.DeepCopyInto(&out.Status)
+}
+
+// DeepCopy returns a deep copy of DNSRecordClaim.
+func (in *DNSRecordClaim) DeepCopy() *DNSRecordClaim {
+	if in == nil {
+		return nil
+	}
+	out := new(DNSRecordClaim)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyObject implements runtime.Object for DNSRecordClaim.
+func (in *DNSRecordClaim) DeepCopyObject() runtime.Object {
+	if c := in.DeepCopy(); c != nil {
+		return c
+	}
+	return nil
+}
+
+// DeepCopyInto copies all fields of DNSRecordClaimList into out.
+func (in *DNSRecordClaimList) DeepCopyInto(out *DNSRecordClaimList) {
+	*out = *in
+	out.TypeMeta = in.TypeMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
+	if in.Items != nil {
+		out.Items = make([]DNSRecordClaim, len(in.Items))
+		for i := range in.Items {
+			in.Items[i].DeepCopyInto(&out.Items[i])
+		}
+	}
+}
+
+// DeepCopy returns a deep copy of DNSRecordClaimList.
+func (in *DNSRecordClaimList) DeepCopy() *DNSRecordClaimList {
+	if in == nil {
+		return nil
+	}
+	out := new(DNSRecordClaimList)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyObject implements runtime.Object for DNSRecordClaimList.
+func (in *DNSRecordClaimList) DeepCopyObject() runtime.Object {
+	if c := in.DeepCopy(); c != nil {
+		return c
+	}
+	return nil
+}

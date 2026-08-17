@@ -9,8 +9,8 @@
   </defs>
 
   <rect x="0" y="0" width="1180" height="900" fill="#ffffff"/>
-  <text x="590" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#111827">IPSpaceClaim reconcile sequence</text>
-  <text x="590" y="52" text-anchor="middle" font-size="12" fill="#6b7280">Allocation → periodic drift detection → deletion &amp; release</text>
+  <text x="590" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#111827">Claim reconcile sequence — IPSpaceClaim &amp; DNSRecordClaim</text>
+  <text x="590" y="52" text-anchor="middle" font-size="12" fill="#6b7280">Both CRDs follow this identical shape; only the DDI v1 endpoint and payload differ</text>
 
   <!-- ===== Lifelines ===== -->
   <!-- x positions: Engineer 130, API Server 410, Controller 700, Infoblox 990 -->
@@ -24,7 +24,7 @@
   </g>
   <g>
     <rect x="620" y="75" width="160" height="40" rx="8" fill="#EFF6FF" stroke="#3B82F6"/>
-    <text x="700" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#1E3A8A">IPSpaceClaim controller</text>
+    <text x="700" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#1E3A8A">Claim controller</text>
   </g>
   <g>
     <rect x="910" y="75" width="160" height="40" rx="8" fill="#FEF3C7" stroke="#D97706"/>
@@ -42,7 +42,7 @@
 
   <!-- 1: engineer -> api server -->
   <line x1="130" y1="180" x2="404" y2="180" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
-  <text x="270" y="172" text-anchor="middle" font-size="10.5" fill="#111827">kubectl apply -f ipspaceclaim.yaml</text>
+  <text x="270" y="172" text-anchor="middle" font-size="10.5" fill="#111827">kubectl apply -f &lt;claim&gt;.yaml</text>
 
   <!-- 2: api server -> controller (watch) -->
   <line x1="410" y1="210" x2="694" y2="210" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
@@ -54,15 +54,15 @@
 
   <!-- 4: controller -> infoblox (allocate) -->
   <line x1="700" y1="278" x2="984" y2="278" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
-  <text x="845" y="270" text-anchor="middle" font-size="10" font-family="monospace" fill="#111827">POST /ipam/address_block</text>
+  <text x="845" y="270" text-anchor="middle" font-size="10" font-family="monospace" fill="#111827">POST /ipam/address_block | /dns/record</text>
 
   <!-- 5: infoblox -> controller (201) dashed return -->
   <line x1="990" y1="308" x2="706" y2="308" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowR)"/>
-  <text x="845" y="300" text-anchor="middle" font-size="10" fill="#4b5563">201 Created {id, address, cidr}</text>
+  <text x="845" y="300" text-anchor="middle" font-size="10" fill="#4b5563">201 Created {id, address/value, ...}</text>
 
   <!-- 6: controller -> api server (status update) -->
   <line x1="700" y1="338" x2="416" y2="338" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
-  <text x="555" y="330" text-anchor="middle" font-size="10.5" fill="#111827">Status: phase=Bound, allocatedCIDR</text>
+  <text x="555" y="330" text-anchor="middle" font-size="10.5" fill="#111827">Status: phase=Bound, allocatedCIDR | fqdn</text>
 
   <!-- ===== Section: Drift detection (loop) ===== -->
   <rect x="40" y="362" width="1100" height="22" fill="#F3F4F6"/>
@@ -73,7 +73,7 @@
 
   <!-- 7: controller -> infoblox (get) -->
   <line x1="700" y1="440" x2="984" y2="440" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
-  <text x="845" y="432" text-anchor="middle" font-size="10" font-family="monospace" fill="#111827">GET /ipam/address_block/{ref}</text>
+  <text x="845" y="432" text-anchor="middle" font-size="10" font-family="monospace" fill="#111827">GET /ipam/address_block/{ref} | /dns/record/{ref}</text>
 
   <!-- 8: infoblox -> controller (200/404) -->
   <line x1="990" y1="470" x2="706" y2="470" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowR)"/>
@@ -89,7 +89,7 @@
 
   <!-- 10: engineer -> api server -->
   <line x1="130" y1="618" x2="404" y2="618" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
-  <text x="270" y="610" text-anchor="middle" font-size="10.5" fill="#111827">kubectl delete ipspaceclaim</text>
+  <text x="270" y="610" text-anchor="middle" font-size="10.5" fill="#111827">kubectl delete &lt;claim&gt;</text>
 
   <!-- 11: api server -> controller -->
   <line x1="410" y1="648" x2="694" y2="648" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
@@ -97,7 +97,7 @@
 
   <!-- 12: controller -> infoblox (release) -->
   <line x1="700" y1="678" x2="984" y2="678" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
-  <text x="845" y="670" text-anchor="middle" font-size="10" font-family="monospace" fill="#111827">DELETE /ipam/address_block/{ref}</text>
+  <text x="845" y="670" text-anchor="middle" font-size="10" font-family="monospace" fill="#111827">DELETE /ipam/address_block/{ref} | /dns/record/{ref}</text>
 
   <!-- 13: infoblox -> controller -->
   <line x1="990" y1="708" x2="706" y2="708" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowR)"/>
@@ -112,9 +112,10 @@
   <text x="270" y="760" text-anchor="middle" font-size="10.5" fill="#4b5563">object removed from etcd</text>
 
   <!-- Notes -->
-  <rect x="60" y="800" width="1040" height="70" rx="8" fill="#F9FAFB" stroke="#E5E7EB"/>
+  <rect x="60" y="800" width="1040" height="84" rx="8" fill="#F9FAFB" stroke="#E5E7EB"/>
   <text x="80" y="820" font-size="10.5" font-weight="700" fill="#374151">Why the finalizer matters:</text>
   <text x="80" y="836" font-size="10" fill="#4b5563">Steps 12–14 only happen because of the finalizer added in step 3 — Kubernetes blocks the object's actual deletion (step 15)</text>
-  <text x="80" y="850" font-size="10" fill="#4b5563">until the finalizer is removed, guaranteeing release-before-delete. Without it, a claim could vanish from etcd while its Infoblox allocation leaks.</text>
+  <text x="80" y="850" font-size="10" fill="#4b5563">until the finalizer is removed, guaranteeing release-before-delete. Applies identically to both CRDs: a leaked DNS record is a smaller</text>
+  <text x="80" y="864" font-size="10" fill="#4b5563">blast radius than a leaked IP allocation, but the same class of bug — this closes it for both.</text>
 
 </svg>

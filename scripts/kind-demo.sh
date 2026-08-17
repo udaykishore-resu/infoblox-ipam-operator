@@ -35,6 +35,7 @@ kind load docker-image mock-infoblox:demo --name "${CLUSTER_NAME}"
 
 echo "▶ installing CRD + RBAC"
 kubectl apply -f config/crd/ipspaceclaims.yaml
+kubectl apply -f config/crd/dnsrecordclaims.yaml
 kubectl apply -f config/rbac/role.yaml
 
 echo "▶ deploying mock-infoblox in-cluster"
@@ -127,9 +128,12 @@ EOF
 echo "▶ waiting for operator rollout"
 kubectl -n infoblox-system rollout status deployment/infoblox-ipam-operator --timeout=90s
 
-kubectl create namespace network-infra --dry-run=client -o yaml | kubectl apply -f -
 echo "▶ applying sample IPSpaceClaim"
+kubectl create namespace network-infra --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f config/samples/ipspaceclaim_sample.yaml
+
+echo "▶ applying sample DNSRecordClaim"
+kubectl apply -f config/samples/dnsrecordclaim_sample.yaml
 
 echo "▶ waiting for it to bind..."
 for i in $(seq 1 20); do
@@ -137,10 +141,16 @@ for i in $(seq 1 20); do
   if [ "$PHASE" = "Bound" ]; then break; fi
   sleep 2
 done
+for i in $(seq 1 20); do
+  DNS_PHASE=$(kubectl -n "${NAMESPACE}" get dnsrecordclaim checkout-service-record -o jsonpath='{.status.phase}' 2>/dev/null || true)
+  if [ "$DNS_PHASE" = "Bound" ]; then break; fi
+  sleep 2
+done
 
 echo
 echo "▶ result:"
 kubectl get ipspaceclaims -A -o wide
+kubectl get dnsrecordclaims -A -o wide
 
 echo
 echo "Tear down with: kind delete cluster --name ${CLUSTER_NAME}"

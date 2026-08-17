@@ -19,4 +19,5 @@ var (
 
 func init() {
 	SchemeBuilder.Register(&IPSpaceClaim{}, &IPSpaceClaimList{})
+	SchemeBuilder.Register(&DNSRecordClaim{}, &DNSRecordClaimList{})
 }

@@ -52,16 +52,36 @@ type addressBlock struct {
 	Comment string            `json:"comment,omitempty"`
 }
 
+// dnsRecord mirrors internal/infoblox.DNSRecord's wire shape.
+type dnsRecord struct {
+	ID      string            `json:"id"`
+	Zone    string            `json:"zone"`
+	Name    string            `json:"name"`
+	Type    string            `json:"type"`
+	Value   string            `json:"value"`
+	TTL     int32             `json:"ttl"`
+	Tags    map[string]string `json:"tags,omitempty"`
+	Comment string            `json:"comment,omitempty"`
+}
+
 type server struct {
-	mu     sync.Mutex
-	blocks map[string]*addressBlock
-	pools  map[string]*ipSpacePool
-	logger *slog.Logger
+	mu         sync.Mutex
+	blocks     map[string]*addressBlock
+	dnsRecords map[string]*dnsRecord
+	knownZones map[string]bool
+	pools      map[string]*ipSpacePool
+	logger     *slog.Logger
 }
 
 func newServer(logger *slog.Logger) *server {
 	return &server{
-		blocks: make(map[string]*addressBlock),
+		blocks:     make(map[string]*addressBlock),
+		dnsRecords: make(map[string]*dnsRecord),
+		knownZones: map[string]bool{
+			// Pre-seeded demo zones, matching config/samples/dnsrecordclaim_sample.yaml
+			"example.com":        true,
+			"internal.corp.demo": true,
+		},
 		pools: map[string]*ipSpacePool{
 			// Pre-seeded demo IP spaces, matching config/samples/ipspaceclaim_sample.yaml
 			"prod-eks-us-east-1":  {baseNet: net.ParseIP("10.44.0.0"), baseCIDR: 16, nextOctet: 12},
@@ -75,6 +95,8 @@ func (s *server) routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/ddi/v1/ipam/address_block", s.handleCollection)
 	mux.HandleFunc("/api/ddi/v1/ipam/address_block/", s.handleItem)
+	mux.HandleFunc("/api/ddi/v1/dns/record", s.handleDNSCollection)
+	mux.HandleFunc("/api/ddi/v1/dns/record/", s.handleDNSItem)
 	// /admin/* endpoints are NOT part of the real Infoblox API — they exist
 	// only so the demo script can simulate an out-of-band change ("someone
 	// edited it in the Infoblox portal") to trigger drift detection.
@@ -205,6 +227,85 @@ func (s *server) handleItem(w http.ResponseWriter, r *http.Request) {
 		}
 		delete(s.blocks, ref)
 		s.logger.Info("released address block", "id", ref)
+		w.WriteHeader(http.StatusNoContent)
+
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// --- DNS record endpoints ---
+
+func (s *server) handleDNSCollection(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Zone    string            `json:"zone"`
+		Name    string            `json:"name"`
+		Type    string            `json:"type"`
+		Value   string            `json:"value"`
+		TTL     int32             `json:"ttl"`
+		Tags    map[string]string `json:"tags"`
+		Comment string            `json:"comment"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErr(w, http.StatusBadRequest, "invalid request body: "+err.Error())
+		return
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.knownZones[req.Zone] {
+		writeErr(w, http.StatusNotFound, fmt.Sprintf("unknown dns zone %q", req.Zone))
+		return
+	}
+
+	rec := &dnsRecord{
+		ID:      "dns/record/" + randomID(),
+		Zone:    req.Zone,
+		Name:    req.Name,
+		Type:    req.Type,
+		Value:   req.Value,
+		TTL:     req.TTL,
+		Tags:    req.Tags,
+		Comment: req.Comment,
+	}
+	if rec.TTL <= 0 {
+		rec.TTL = 300
+	}
+
+	s.dnsRecords[rec.ID] = rec
+	s.logger.Info("created dns record", "id", rec.ID, "fqdn", rec.Name+"."+rec.Zone, "type", rec.Type, "value", rec.Value)
+
+	writeJSON(w, http.StatusCreated, rec)
+}
+
+func (s *server) handleDNSItem(w http.ResponseWriter, r *http.Request) {
+	ref := strings.TrimPrefix(r.URL.Path, "/api/ddi/v1/")
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	switch r.Method {
+	case http.MethodGet:
+		rec, ok := s.dnsRecords[ref]
+		if !ok {
+			writeErr(w, http.StatusNotFound, "dns record not found")
+			return
+		}
+		writeJSON(w, http.StatusOK, rec)
+
+	case http.MethodDelete:
+		if _, ok := s.dnsRecords[ref]; !ok {
+			writeErr(w, http.StatusNotFound, "dns record not found")
+			return
+		}
+		delete(s.dnsRecords, ref)
+		s.logger.Info("deleted dns record", "id", ref)
 		w.WriteHeader(http.StatusNoContent)
 
 	default:

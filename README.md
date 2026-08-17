@@ -74,21 +74,6 @@ Infoblox's existing multi-cloud DNS fan-out (see [§4](#4-aws-architecture))
 plane is what actually propagates a record to Route 53, Azure DNS, or
 Google Cloud DNS depending on which provider the zone is delegated to.
 
-```
-+-----------------------+        watch           +----------------------------+
-|  kubectl apply -f     | ----------------------> |  Controller manager       |
-|  IPSpaceClaim or      |                         |  (controller-runtime)     |
-|  DNSRecordClaim (CRD) |                         +--------------+-------------+
-+-----------------------+                                        |
-                              allocate/get/release (IPAM)          | REST (DDI v1)
-                              create/get/delete record (DNS)       v
-                                                    +----------------------------+
-                                                    |  Infoblox Universal DDI   |
-                                                    |  /api/ddi/v1/ipam/...     |
-                                                    |  /api/ddi/v1/dns/record   |
-                                                    +----------------------------+
-```
-
 ![Solution flow: both CRDs watched by one controller manager, which calls Infoblox Universal DDI over REST for either IPAM or DNS](docs/solution-flow.svg)
 
 *[Download as PNG](docs/solution-flow.png) · [source SVG](docs/solution-flow.svg)*

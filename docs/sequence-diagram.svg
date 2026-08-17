@@ -1,0 +1,120 @@
+<svg viewBox="0 0 1180 900" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrowD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#111827"/>
+    </marker>
+    <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="900" fill="#ffffff"/>
+  <text x="590" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#111827">IPSpaceClaim reconcile sequence</text>
+  <text x="590" y="52" text-anchor="middle" font-size="12" fill="#6b7280">Allocation → periodic drift detection → deletion &amp; release</text>
+
+  <!-- ===== Lifelines ===== -->
+  <!-- x positions: Engineer 130, API Server 410, Controller 700, Infoblox 990 -->
+  <g>
+    <rect x="60" y="75" width="140" height="40" rx="8" fill="#F3F4F6" stroke="#9CA3AF"/>
+    <text x="130" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#374151">Platform engineer</text>
+  </g>
+  <g>
+    <rect x="330" y="75" width="160" height="40" rx="8" fill="#EFF6FF" stroke="#3B82F6"/>
+    <text x="410" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#1E3A8A">Kubernetes API server</text>
+  </g>
+  <g>
+    <rect x="620" y="75" width="160" height="40" rx="8" fill="#EFF6FF" stroke="#3B82F6"/>
+    <text x="700" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#1E3A8A">IPSpaceClaim controller</text>
+  </g>
+  <g>
+    <rect x="910" y="75" width="160" height="40" rx="8" fill="#FEF3C7" stroke="#D97706"/>
+    <text x="990" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#78350F">Infoblox Universal DDI</text>
+  </g>
+
+  <line x1="130" y1="115" x2="130" y2="860" stroke="#D1D5DB" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <line x1="410" y1="115" x2="410" y2="860" stroke="#93C5FD" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <line x1="700" y1="115" x2="700" y2="860" stroke="#93C5FD" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <line x1="990" y1="115" x2="990" y2="860" stroke="#FCD34D" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+  <!-- ===== Section: Allocation ===== -->
+  <rect x="40" y="135" width="1100" height="22" fill="#F3F4F6"/>
+  <text x="60" y="151" font-size="11.5" font-weight="700" fill="#374151">ALLOCATION</text>
+
+  <!-- 1: engineer -> api server -->
+  <line x1="130" y1="180" x2="404" y2="180" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <text x="270" y="172" text-anchor="middle" font-size="10.5" fill="#111827">kubectl apply -f ipspaceclaim.yaml</text>
+
+  <!-- 2: api server -> controller (watch) -->
+  <line x1="410" y1="210" x2="694" y2="210" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <text x="555" y="202" text-anchor="middle" font-size="10.5" fill="#111827">watch event: ADDED</text>
+
+  <!-- 3: controller -> api server (add finalizer) -->
+  <line x1="700" y1="240" x2="416" y2="240" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <text x="555" y="232" text-anchor="middle" font-size="10.5" fill="#111827">Update: add finalizer</text>
+
+  <!-- 4: controller -> infoblox (allocate) -->
+  <line x1="700" y1="278" x2="984" y2="278" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <text x="845" y="270" text-anchor="middle" font-size="10" font-family="monospace" fill="#111827">POST /ipam/address_block</text>
+
+  <!-- 5: infoblox -> controller (201) dashed return -->
+  <line x1="990" y1="308" x2="706" y2="308" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowR)"/>
+  <text x="845" y="300" text-anchor="middle" font-size="10" fill="#4b5563">201 Created {id, address, cidr}</text>
+
+  <!-- 6: controller -> api server (status update) -->
+  <line x1="700" y1="338" x2="416" y2="338" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <text x="555" y="330" text-anchor="middle" font-size="10.5" fill="#111827">Status: phase=Bound, allocatedCIDR</text>
+
+  <!-- ===== Section: Drift detection (loop) ===== -->
+  <rect x="40" y="362" width="1100" height="22" fill="#F3F4F6"/>
+  <text x="60" y="378" font-size="11.5" font-weight="700" fill="#374151">DRIFT DETECTION — repeats every 5 minutes</text>
+
+  <rect x="640" y="396" width="420" height="150" rx="6" fill="none" stroke="#9CA3AF" stroke-dasharray="4 3"/>
+  <text x="655" y="412" font-size="10" font-weight="700" fill="#6b7280">loop [every 5 min]</text>
+
+  <!-- 7: controller -> infoblox (get) -->
+  <line x1="700" y1="440" x2="984" y2="440" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <text x="845" y="432" text-anchor="middle" font-size="10" font-family="monospace" fill="#111827">GET /ipam/address_block/{ref}</text>
+
+  <!-- 8: infoblox -> controller (200/404) -->
+  <line x1="990" y1="470" x2="706" y2="470" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowR)"/>
+  <text x="845" y="462" text-anchor="middle" font-size="10" fill="#4b5563">200 OK — or 404 if deleted out-of-band</text>
+
+  <!-- 9: controller -> api server (status) -->
+  <line x1="700" y1="516" x2="416" y2="516" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <text x="555" y="508" text-anchor="middle" font-size="10.5" fill="#111827">Status: phase=Bound | Drifted</text>
+
+  <!-- ===== Section: Deletion & release ===== -->
+  <rect x="40" y="574" width="1100" height="22" fill="#F3F4F6"/>
+  <text x="60" y="590" font-size="11.5" font-weight="700" fill="#374151">DELETION &amp; RELEASE</text>
+
+  <!-- 10: engineer -> api server -->
+  <line x1="130" y1="618" x2="404" y2="618" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <text x="270" y="610" text-anchor="middle" font-size="10.5" fill="#111827">kubectl delete ipspaceclaim</text>
+
+  <!-- 11: api server -> controller -->
+  <line x1="410" y1="648" x2="694" y2="648" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <text x="555" y="640" text-anchor="middle" font-size="10.5" fill="#111827">watch event: deletionTimestamp set</text>
+
+  <!-- 12: controller -> infoblox (release) -->
+  <line x1="700" y1="678" x2="984" y2="678" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <text x="845" y="670" text-anchor="middle" font-size="10" font-family="monospace" fill="#111827">DELETE /ipam/address_block/{ref}</text>
+
+  <!-- 13: infoblox -> controller -->
+  <line x1="990" y1="708" x2="706" y2="708" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowR)"/>
+  <text x="845" y="700" text-anchor="middle" font-size="10" fill="#4b5563">204 No Content (idempotent on 404)</text>
+
+  <!-- 14: controller -> api server (remove finalizer) -->
+  <line x1="700" y1="738" x2="416" y2="738" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowD)"/>
+  <text x="555" y="730" text-anchor="middle" font-size="10.5" fill="#111827">Update: remove finalizer</text>
+
+  <!-- 15: api server -> engineer (object gone) -->
+  <line x1="410" y1="768" x2="136" y2="768" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowR)"/>
+  <text x="270" y="760" text-anchor="middle" font-size="10.5" fill="#4b5563">object removed from etcd</text>
+
+  <!-- Notes -->
+  <rect x="60" y="800" width="1040" height="70" rx="8" fill="#F9FAFB" stroke="#E5E7EB"/>
+  <text x="80" y="820" font-size="10.5" font-weight="700" fill="#374151">Why the finalizer matters:</text>
+  <text x="80" y="836" font-size="10" fill="#4b5563">Steps 12–14 only happen because of the finalizer added in step 3 — Kubernetes blocks the object's actual deletion (step 15)</text>
+  <text x="80" y="850" font-size="10" fill="#4b5563">until the finalizer is removed, guaranteeing release-before-delete. Without it, a claim could vanish from etcd while its Infoblox allocation leaks.</text>
+
+</svg>

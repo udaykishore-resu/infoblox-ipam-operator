@@ -83,6 +83,18 @@ at creation time.
                                                     +----------------------------+
 ```
 
+![Solution flow: kubectl apply triggers the IPSpaceClaim controller, which calls Infoblox Universal DDI over REST](docs/solution-flow.svg)
+
+*[Download as PNG](docs/solution-flow.png) · [source SVG](docs/solution-flow.svg)*
+
+The diagram above is the steady-state shape. The full lifecycle — allocation,
+periodic drift detection, and finalizer-gated deletion — is more than one
+arrow, so here's the sequence end to end:
+
+![Sequence diagram: IPSpaceClaim allocation, periodic drift detection every 5 minutes, and deletion with release](docs/sequence-diagram.svg)
+
+*[Download as PNG](docs/sequence-diagram.png) · [source SVG](docs/sequence-diagram.svg)*
+
 **Lifecycle:**
 
 1. A team declares an `IPSpaceClaim` — either "give me the next available

@@ -369,5 +369,5 @@ with or endorsed by Infoblox.
 
 **Udaykishore Resu** — Principal Software Engineer, platform architecture &
 distributed systems (Golang, Kubernetes, multi-cloud AWS/GCP).
-[github.com/udaykishore-resu](https://github.com/udaykishore-resu) ·
-[medium.com/@udaykishoreresu](https://medium.com/@udaykishoreresu)
+[![GitHub](https://img.shields.io/badge/GitHub-udaykishore--resu-181717?logo=github&logoColor=white)](https://github.com/udaykishore-resu)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-udaykishore--resu-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/udaykishore-resu/)

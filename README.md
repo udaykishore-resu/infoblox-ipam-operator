@@ -44,7 +44,7 @@ when someone changes or deletes an allocation directly in the Infoblox
 portal.
 
 ![Existing flow](docs/architecture-aws-existing-only.svg)
-*[Download as PNG](docs/architecture-aws-existing-only.png) . [source SVG](docs/architecture-aws-existing-only.svg)
+*[Download as PNG](docs/architecture-aws-existing-only.png) . [source SVG](docs/architecture-aws-existing-only.svg)*
 
 ## 2. The gap
 

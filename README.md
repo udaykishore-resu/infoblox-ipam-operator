@@ -43,6 +43,9 @@ spreadsheet or wiki page — with no automated reconciliation, and no signal
 when someone changes or deletes an allocation directly in the Infoblox
 portal.
 
+![Existing flow](docs/architecture-aws-existing-only.svg)
+*[Download as PNG](docs/architecture-aws-existing-only.png) . [source SVG](docs/architecture-aws-existing-only.svg)
+
 ## 2. The gap
 
 Specifically, there is **no CRD-based, `controller-runtime`-native IPAM
@@ -68,20 +71,6 @@ Universal DDI as the system of record. Concretely, that means:
 This operator introduces one CRD, `IPSpaceClaim`, and a controller that
 keeps it in sync with Infoblox Universal DDI on an ongoing basis — not just
 at creation time.
-
-```
-+-----------------------+        watch           +----------------------------+
-|  kubectl apply -f     | ----------------------> |  IPSpaceClaim Controller  |
-|  IPSpaceClaim (CRD)   |                         |  (controller-runtime)     |
-+-----------------------+                         +--------------+-------------+
-                                                                  |
-                                      allocate / get / release    | REST (DDI v1)
-                                                                  v
-                                                    +----------------------------+
-                                                    |  Infoblox Universal DDI   |
-                                                    |  /api/ddi/v1/ipam/...     |
-                                                    +----------------------------+
-```
 
 ![Solution flow: kubectl apply triggers the IPSpaceClaim controller, which calls Infoblox Universal DDI over REST](docs/solution-flow.svg)
 

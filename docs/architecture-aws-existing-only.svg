@@ -1,0 +1,75 @@
+<svg viewBox="0 0 680 800" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI', Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="680" height="800" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="340" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#111827">Infoblox Universal DDI — existing AWS architecture</text>
+  <text x="340" y="54" text-anchor="middle" font-size="12" fill="#6b7280">As it stands today, before this operator is introduced</text>
+
+  <!-- Outer panel -->
+  <rect x="30" y="76" width="620" height="670" rx="14" fill="#FFF7ED" stroke="#F97316" stroke-width="1.5"/>
+  <text x="340" y="106" text-anchor="middle" font-size="15" font-weight="700" fill="#9A3412">Infoblox-operated AWS account/region</text>
+  <text x="340" y="124" text-anchor="middle" font-size="11" fill="#9A3412">Not the customer's account — a separate trust boundary</text>
+
+  <!-- Shared Services VPC -->
+  <rect x="60" y="146" width="560" height="270" rx="10" fill="#FFEDD5" stroke="#FB923C"/>
+  <text x="80" y="168" font-size="13" font-weight="700" fill="#7C2D12">Shared Services VPC</text>
+
+  <!-- Atlas / EKS -->
+  <rect x="80" y="182" width="260" height="130" rx="8" fill="#ffffff" stroke="#FDBA74"/>
+  <text x="210" y="204" text-anchor="middle" font-size="13" font-weight="700" fill="#7C2D12">Atlas Platform (EKS)</text>
+  <text x="210" y="222" text-anchor="middle" font-size="10.5" fill="#7C2D12">Management-plane services,</text>
+  <text x="210" y="236" text-anchor="middle" font-size="10.5" fill="#7C2D12">containerized on Kubernetes</text>
+  <g fill="#F97316">
+    <rect x="115" y="250" width="26" height="18" rx="3"/>
+    <rect x="150" y="250" width="26" height="18" rx="3"/>
+    <rect x="185" y="250" width="26" height="18" rx="3"/>
+    <rect x="220" y="250" width="26" height="18" rx="3"/>
+    <rect x="132" y="275" width="26" height="18" rx="3"/>
+    <rect x="167" y="275" width="26" height="18" rx="3"/>
+    <rect x="202" y="275" width="26" height="18" rx="3"/>
+  </g>
+  <text x="210" y="303" text-anchor="middle" font-size="10" fill="#7C2D12">DNS · DHCP · IPAM services</text>
+
+  <!-- NIOS-X as a Service -->
+  <rect x="360" y="182" width="260" height="90" rx="8" fill="#ffffff" stroke="#FDBA74"/>
+  <text x="490" y="204" text-anchor="middle" font-size="13" font-weight="700" fill="#7C2D12">NIOS-X as a Service</text>
+  <text x="490" y="222" text-anchor="middle" font-size="10.5" fill="#7C2D12">Cloud-delivered DNS/DHCP</text>
+  <text x="490" y="236" text-anchor="middle" font-size="10.5" fill="#7C2D12">edge appliances</text>
+  <text x="490" y="254" text-anchor="middle" font-size="10" fill="#9A3412">↕ AWS Transit Gateway</text>
+
+  <!-- Transit gateway box -->
+  <rect x="360" y="282" width="260" height="54" rx="8" fill="#FFEDD5" stroke="#FB923C" stroke-dasharray="4 3"/>
+  <text x="490" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#7C2D12">AWS Transit Gateway</text>
+  <text x="490" y="319" text-anchor="middle" font-size="10.5" fill="#7C2D12">Centralized cross-VPC routing</text>
+
+  <!-- Multi-cloud DNS row -->
+  <text x="80" y="440" font-size="13" font-weight="700" fill="#7C2D12">Multi-cloud DNS management (Universal DDI Management)</text>
+  <rect x="80" y="454" width="170" height="56" rx="8" fill="#ffffff" stroke="#FDBA74"/>
+  <text x="165" y="476" text-anchor="middle" font-size="12" font-weight="600" fill="#7C2D12">Amazon Route 53</text>
+  <text x="165" y="494" text-anchor="middle" font-size="10" fill="#9A3412">this account</text>
+
+  <rect x="266" y="454" width="170" height="56" rx="8" fill="#ffffff" stroke="#FDBA74"/>
+  <text x="351" y="476" text-anchor="middle" font-size="12" font-weight="600" fill="#7C2D12">Azure DNS</text>
+  <text x="351" y="494" text-anchor="middle" font-size="10" fill="#9A3412">customer's Azure</text>
+
+  <rect x="452" y="454" width="168" height="56" rx="8" fill="#ffffff" stroke="#FDBA74"/>
+  <text x="536" y="476" text-anchor="middle" font-size="12" font-weight="600" fill="#7C2D12">Google Cloud DNS</text>
+  <text x="536" y="494" text-anchor="middle" font-size="10" fill="#9A3412">customer's GCP</text>
+
+  <!-- Universal DDI Portal API -->
+  <rect x="60" y="536" width="560" height="100" rx="10" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="340" y="566" text-anchor="middle" font-size="14" font-weight="700" fill="#78350F">Universal DDI Portal REST API</text>
+  <text x="340" y="588" text-anchor="middle" font-size="13" font-family="monospace" fill="#78350F">csp.infoblox.com/api/ddi/v1/ipam/...</text>
+  <text x="340" y="608" text-anchor="middle" font-size="11" fill="#92400E">Public HTTPS endpoint — token-authenticated service accounts</text>
+  <text x="340" y="624" text-anchor="middle" font-size="11" fill="#92400E">This is the only door into the system from outside</text>
+
+  <!-- Marketplace / billing note -->
+  <rect x="60" y="656" width="560" height="72" rx="10" fill="#ffffff" stroke="#FDBA74" stroke-dasharray="3 3"/>
+  <text x="340" y="680" text-anchor="middle" font-size="12" font-weight="600" fill="#7C2D12">Distribution: AWS Marketplace</text>
+  <text x="340" y="698" text-anchor="middle" font-size="10.5" fill="#7C2D12">Subscription billed via customer's AWS account;</text>
+  <text x="340" y="712" text-anchor="middle" font-size="10.5" fill="#7C2D12">AWS handles deployment/infra management for the listing</text>
+
+  <text x="340" y="760" text-anchor="middle" font-size="10.5" fill="#9CA3AF" font-style="italic">Based on Infoblox's public documentation and AWS Marketplace listing.</text>
+  <text x="340" y="776" text-anchor="middle" font-size="10.5" fill="#9CA3AF" font-style="italic">Not an official Infoblox diagram — reconstructed for architectural context.</text>
+
+</svg>
